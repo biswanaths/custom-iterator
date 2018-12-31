@@ -1,4 +1,4 @@
-package com.vipin.data;
+package com.example.data;
 
 import junit.framework.Test;
 import junit.framework.TestCase;

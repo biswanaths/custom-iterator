@@ -13,23 +13,19 @@ import com.example.data.model.Address;
 import com.opencsv.CSVReader;
 
 
-public class DataReader implements Iterable<Employee> 
+public class EmployeeDataReader implements Iterable<Employee> 
 {
+
+    CSVReader empReader, addReader;
+
+    public EmployeeDataReader(String empFile, String addFile) throws IOException { 
+        empReader  = new CSVReader(new FileReader(empFile));
+        addReader  = new CSVReader(new FileReader(addFile));
+    }
+
     @Override
     public Iterator<Employee> iterator() { 
-        // this is bad. Need to find a better way to 
-        // float the exception up. 
-        // may be move the initalization of the 
-        // iterator to constructor. Then the whole point 
-        // of releasing resource. May be need to use 
-        // a builder class 
-        try { 
-            return new DataIterator();
-        } 
-        catch(Exception e) { 
-            System.out.println(e);
-            return null;
-        }
+        return new DataIterator(empReader, addReader);
     }
 
     public class DataIterator implements Iterator<Employee> { 
@@ -38,11 +34,11 @@ public class DataReader implements Iterable<Employee>
 
         Address prevAdd;
 
-        public DataIterator() throws IOException {
-            empIt = new CSVReader(new FileReader("employee.csv")).iterator();
-            addIt = new CSVReader(new FileReader("address.csv")).iterator();
+        public DataIterator(CSVReader empReader, CSVReader addReader) {
+            empIt = empReader.iterator();
+            addIt = addReader.iterator();
             if(addIt.hasNext())
-                prevAdd = toAddress(addIt.next());
+                prevAdd = convertToAddress(addIt.next());
         } 
 
         @Override 
@@ -52,27 +48,32 @@ public class DataReader implements Iterable<Employee>
 
         @Override 
         public Employee next() {
-            String[] empRow = empIt.next();
-            Employee emp = new Employee();
-            emp.setId(empRow[0]);
-            emp.setName(empRow[1]);
+            Employee emp = covertToEmployee(empIt.next());
             while(prevAdd != null &&  prevAdd.getEmpId().equals(emp.getId()) ) { 
                 emp.getAddresses().add(prevAdd);
                 if(addIt.hasNext())
-                    prevAdd  = toAddress(addIt.next());
+                    prevAdd  = convertToAddress(addIt.next());
                 else 
                     prevAdd = null;
             }
             return emp;
         }
 
-        public Address toAddress(String[] addRow) { 
+        public Address convertToAddress(String[] addRow) { 
             Address address = new Address();
             address.setId(addRow[0]);
             address.setName(addRow[1]);
             address.setEmpId(addRow[2]);
             return address;
         }
+
+        public Employee covertToEmployee(String[] empRow) { 
+            Employee emp = new Employee();
+            emp.setId(empRow[0]);
+            emp.setName(empRow[1]);
+            return emp;
+        }
+
 
     }
 
